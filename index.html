@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>HTML Quest - Petualangan Belajar HTML</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #0f172a;
+            font-family: 'VT323', monospace;
+            color: #ffffff;
+        }
+        .pixel-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+        canvas {
+            image-rendering: pixelated;
+        }
+        .retro-card {
+            background: #1e293b;
+            border: 4px solid #38bdf8;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+        }
+        .retro-btn {
+            background-color: #0284c7;
+            box-shadow: inset -4px -4px 0px #0369a1, inset 4px 4px 0px #38bdf8;
+            transition: all 0.1s;
+        }
+        .retro-btn:active {
+            box-shadow: inset 4px 4px 0px #0369a1, inset -4px -4px 0px #38bdf8;
+            transform: translateY(2px);
+        }
+        .retro-btn-green {
+            background-color: #16a34a;
+            box-shadow: inset -4px -4px 0px #15803d, inset 4px 4px 0px #4ade80;
+        }
+        .retro-btn-green:active {
+            box-shadow: inset 4px 4px 0px #15803d, inset -4px -4px 0px #4ade80;
+        }
+        .retro-btn-pink {
+            background-color: #ec4899;
+            box-shadow: inset -4px -4px 0px #be185d, inset 4px 4px 0px #f472b6;
+        }
+        .retro-btn-pink:active {
+            box-shadow: inset 4px 4px 0px #be185d, inset -4px -4px 0px #f472b6;
+            transform: translateY(2px);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #38bdf8;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="w-full h-full flex flex-col justify-between items-center bg-slate-950 p-0 m-0 overflow-hidden select-none">
+
+    <!-- Header HUD Bar (Sticky Top) -->
+    <header class="w-full shrink-0 flex justify-around items-center px-2 py-1 sm:py-2 bg-slate-900 border-b-2 border-slate-700 text-xs sm:text-sm z-10">
+        <div class="flex items-center space-x-1 sm:space-x-2">
+            <span class="text-yellow-400 font-bold">🎯 SKOR:</span>
+            <span id="score-val" class="pixel-font text-sky-400 text-[10px] sm:text-xs">000000</span>
+        </div>
+        <div class="flex items-center space-x-1 sm:space-x-2">
+            <span class="text-amber-300 font-bold">🪙 KOIN:</span>
+            <span id="coins-val" class="pixel-font text-yellow-300 text-[10px] sm:text-xs">00</span>
+        </div>
+        <div class="flex items-center space-x-1 sm:space-x-2">
+            <span class="text-red-400 font-bold">❤️ NYAWA:</span>
+            <span id="lives-val" class="text-sm sm:text-base">❤️❤️❤️</span>
+        </div>
+        <div class="flex items-center space-x-1 sm:space-x-2">
+            <span class="text-cyan-300 font-bold">📚 MATERI:</span>
+            <span id="mission-val" class="pixel-font text-[10px] sm:text-xs text-cyan-300">0/3</span>
+        </div>
+        <div class="flex items-center space-x-1 sm:space-x-2">
+            <span class="text-emerald-400 font-bold">📍 LVL:</span>
+            <span id="level-val" class="pixel-font text-[10px] sm:text-xs text-emerald-300">1</span>
+        </div>
+    </header>
+
+    <!-- Fullscreen Game Canvas Container -->
+    <main class="relative w-full flex-1 flex items-center justify-center bg-black overflow-hidden">
+        
+        <!-- Game Canvas -->
+        <canvas id="gameCanvas" width="800" height="450" class="w-full h-full object-contain max-w-full max-h-full"></canvas>
+
+        <!-- Toast / Mission Alert Overlay -->
+        <div id="mission-alert" class="absolute top-4 left-1/2 -translate-x-1/2 bg-red-600/90 border-2 border-red-300 text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-bold shadow-lg opacity-0 transition-opacity duration-300 pointer-events-none z-20 text-center max-w-[90%]">
+            🔒 Misi Belum Selesai! Buka semua blok [?] untuk membuka bendera finish!
+        </div>
+
+        <!-- Start Screen Overlay -->
+        <div id="start-screen" class="absolute inset-0 bg-slate-900/95 flex flex-col items-center justify-center p-4 sm:p-6 text-center z-10 overflow-y-auto">
+            <h1 class="pixel-font text-2xl sm:text-4xl text-sky-400 mb-2 animate-bounce">HTML QUEST</h1>
+            <p class="text-base sm:text-xl text-yellow-300 font-bold mb-4">Petualangan Belajar HTML Ala Super Mario</p>
+            <p class="text-xs sm:text-lg text-slate-300 mb-6 max-w-lg leading-relaxed">
+                Buka semua **Blok Misteri [?]** untuk mempelajari materi HTML. **Pintu finish hanya terbuka jika semua materi di level tersebut telah dibaca!**
+            </p>
+            <div class="flex flex-col sm:flex-row gap-3 w-full max-w-xs sm:max-w-none justify-center">
+                <button onclick="startGame(1)" class="retro-btn pixel-font px-6 py-3 text-xs sm:text-sm text-white rounded">MULAI GAME</button>
+                <button onclick="showLevelSelect()" class="retro-btn-green pixel-font px-6 py-3 text-xs sm:text-sm text-white rounded">PILIH LEVEL</button>
+            </div>
+            <div class="mt-6 bg-slate-800/80 p-3 rounded-lg border border-slate-600 text-left text-xs max-w-md">
+                <p class="font-bold text-yellow-300 mb-1">🎮 KONTROL:</p>
+                <p>• <strong>Keyboard (PC)</strong>: A/D atau Panah Kiri/Kanan, Space/W (Lompat)</p>
+                <p>• <strong>HP / Tablet</strong>: Gunakan Tombol Sentuh On-Screen</p>
+            </div>
+        </div>
+
+        <!-- Level Select Overlay -->
+        <div id="level-screen" class="absolute inset-0 bg-slate-900/95 flex flex-col items-center justify-center p-4 sm:p-6 hidden z-10 overflow-y-auto">
+            <h2 class="pixel-font text-lg sm:text-3xl text-yellow-400 mb-4 sm:mb-6">PILIH LEVEL</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl w-full">
+                <button id="lvl-btn-1" onclick="startGame(1)" class="retro-btn p-3 sm:p-4 rounded text-left flex flex-col justify-between">
+                    <span class="pixel-font text-[10px] sm:text-xs text-sky-300">LEVEL 1</span>
+                    <span class="text-base sm:text-lg font-bold">1. Sejarah Perkembangan HTML</span>
+                    <span class="text-[10px] sm:text-xs text-emerald-400">Tingkat: Sangat Mudah</span>
+                </button>
+                <button id="lvl-btn-2" onclick="startGame(2)" class="retro-btn p-3 sm:p-4 rounded text-left flex flex-col justify-between opacity-50 cursor-not-allowed">
+                    <span class="pixel-font text-[10px] sm:text-xs text-sky-300">LEVEL 2 🔒</span>
+                    <span class="text-base sm:text-lg font-bold">2. Cara Kerja HTML & Web</span>
+                    <span class="text-[10px] sm:text-xs text-yellow-400">Tingkat: Mudah-Sedang</span>
+                </button>
+                <button id="lvl-btn-3" onclick="startGame(3)" class="retro-btn p-3 sm:p-4 rounded text-left flex flex-col justify-between opacity-50 cursor-not-allowed">
+                    <span class="pixel-font text-[10px] sm:text-xs text-sky-300">LEVEL 3 🔒</span>
+                    <span class="text-base sm:text-lg font-bold">3. Tag-Tag Utama HTML</span>
+                    <span class="text-[10px] sm:text-xs text-orange-400">Tingkat: Sedang</span>
+                </button>
+                <button id="lvl-btn-4" onclick="startGame(4)" class="retro-btn p-3 sm:p-4 rounded text-left flex flex-col justify-between opacity-50 cursor-not-allowed">
+                    <span class="pixel-font text-[10px] sm:text-xs text-sky-300">LEVEL 4 🔒</span>
+                    <span class="text-base sm:text-lg font-bold">4. Atribut Dalam HTML</span>
+                    <span class="text-[10px] sm:text-xs text-red-400">Tingkat: Sukar</span>
+                </button>
+            </div>
+            <button onclick="showStartScreen()" class="mt-4 text-slate-400 underline hover:text-white text-sm">Kembali ke Menu</button>
+        </div>
+
+        <!-- Educational Flashcard Modal -->
+        <div id="flashcard-modal" class="absolute inset-0 bg-black/80 flex items-center justify-center p-4 hidden z-30">
+            <div class="retro-card p-5 sm:p-6 rounded-lg max-w-lg w-full text-center flex flex-col items-center">
+                <div class="text-pink-400 text-2xl sm:text-3xl mb-1 sm:mb-2">💡</div>
+                <h3 id="card-title" class="pixel-font text-xs sm:text-base text-pink-300 mb-3">MATERI EDUKASI HTML</h3>
+                <p id="card-body" class="text-base sm:text-xl text-slate-200 mb-5 leading-relaxed text-left max-h-[50vh] overflow-y-auto">
+                    Materi penjelasan akan tampil di sini...
+                </p>
+                <button onclick="closeFlashcard()" class="retro-btn-green pixel-font px-6 py-2.5 text-xs sm:text-sm text-white rounded">PAHAM, LANJUTKAN!</button>
+            </div>
+        </div>
+
+        <!-- End of Level Quiz Modal -->
+        <div id="quiz-modal" class="absolute inset-0 bg-black/90 flex items-center justify-center p-4 hidden z-40">
+            <div class="retro-card border-pink-500 p-5 sm:p-6 rounded-lg max-w-xl w-full text-center flex flex-col items-center">
+                <div class="text-yellow-400 text-3xl mb-2">🎓 KUIS FINISH LEVEL</div>
+                <h3 id="quiz-question" class="text-lg sm:text-2xl text-yellow-300 font-bold mb-4 text-left w-full">
+                    Pertanyaan kuis akan tampil di sini...
+                </h3>
+                <div id="quiz-options" class="w-full flex flex-col gap-2.5 mb-4">
+                    <!-- Dynamic Quiz Options -->
+                </div>
+                <p id="quiz-feedback" class="text-sm sm:text-base font-bold min-h-[24px] mb-2"></p>
+            </div>
+        </div>
+
+        <!-- Game Over / Level Complete Overlay -->
+        <div id="end-screen" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center hidden z-30">
+            <h2 id="end-title" class="pixel-font text-xl sm:text-4xl mb-3 text-emerald-400">LEVEL SELESAI!</h2>
+            <p id="end-subtitle" class="text-sm sm:text-lg text-slate-300 mb-4">Hebat, kamu berhasil menyelesaikan tantangan HTML!</p>
+
+            <!-- Kata-Kata Semangat Motivasi -->
+            <div class="bg-pink-950/60 border-2 border-pink-500/80 p-3 sm:p-4 rounded-lg mb-5 max-w-md shadow-lg">
+                <p class="text-xs text-pink-300 font-bold uppercase tracking-wider mb-1">🔥 MENTOR MESSAGE 🔥</p>
+                <p id="quote-msg" class="text-sm sm:text-base text-pink-100 italic">
+                    "Koding bukanlah tentang seberapa cepat kamu paham, melainkan tentang seberapa konsisten kamu mencoba!"
+                </p>
+            </div>
+
+            <div class="bg-slate-800 p-3 sm:p-4 rounded border border-slate-700 mb-6 w-full max-w-xs flex justify-around">
+                <div>
+                    <p class="text-slate-400 text-xs">SKOR</p>
+                    <p id="final-score" class="pixel-font text-sm sm:text-lg text-yellow-400">000000</p>
+                </div>
+                <div>
+                    <p class="text-slate-400 text-xs">KOIN</p>
+                    <p id="final-coins" class="pixel-font text-sm sm:text-lg text-amber-300">00</p>
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <button id="next-lvl-btn" onclick="nextLevel()" class="retro-btn-green pixel-font px-5 py-3 text-xs sm:text-sm text-white rounded">LANJUT LEVEL ➔</button>
+                <button onclick="showLevelSelect()" class="retro-btn pixel-font px-5 py-3 text-xs sm:text-sm text-white rounded">MENU LEVEL</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Mobile Responsive On-Screen Controls (Sticky Bottom - ALL PINK BUTTONS) -->
+    <footer class="w-full shrink-0 flex justify-between items-center px-6 py-3 bg-slate-900 border-t-2 border-slate-800 select-none sm:hidden">
+        <div class="flex gap-4">
+            <button id="btn-left" class="w-16 h-16 retro-btn-pink rounded-full flex items-center justify-center text-3xl active:scale-95 shadow-lg text-white font-bold">◀</button>
+            <button id="btn-right" class="w-16 h-16 retro-btn-pink rounded-full flex items-center justify-center text-3xl active:scale-95 shadow-lg text-white font-bold">▶</button>
+        </div>
+        <button id="btn-jump" class="w-20 h-16 retro-btn-pink rounded-full flex items-center justify-center text-xs font-bold pixel-font active:scale-95 shadow-lg text-white">LOMPAT</button>
+    </footer>
+
+    <script>
+        /* --- MATERI EDUKASI PER LEVEL --- */
+        const LEVEL_DATA = {
+            1: {
+                title: "Sejarah Perkembangan HTML",
+                cards: [
+                    "1. HTML (HyperText Markup Language) diciptakan oleh Tim Berners-Lee pada akhir tahun 1991 di CERN untuk memfasilitasi pembagian dokumen ilmiah.",
+                    "2. Perkembangan Versi HTML:\n• HTML 2.0 (1995): Standar web resmi pertama.\n• HTML 4.01 (1999): Mendukung CSS & skrip interaktif.\n• HTML5 (2014): Standar modern yang mendukung video, audio, dan grafis canvas tanpa plugin eksternal.",
+                    "3. Mengapa HTML Sangat Penting?\nHTML adalah kerangka tulang punggung seluruh situs web di internet. Tanpa HTML, browser tidak dapat menampilkan teks, gambar, maupun link."
+                ],
+                quiz: {
+                    question: "Siapa ilmuwan yang menciptakan HTML pertama kali pada tahun 1991?",
+                    options: [
+                        "A. Alan Turing",
+                        "B. Tim Berners-Lee",
+                        "C. Brendan Eich",
+                        "D. Mark Zuckerberg"
+                    ],
+                    answer: 1
+                }
+            },
+            2: {
+                title: "Cara Kerja HTML & Web",
+                cards: [
+                    "1. Arsitektur Client-Server:\nBrowser pengguna (Client) mengirim permintaan (HTTP Request) ke komputer tempat web disimpan (Web Server). Server membalas dengan mengirimkan berkas file HTML.",
+                    "2. Parsing & Pembentukan DOM Tree:\nBrowser Engine membaca baris kode HTML dan mengubahnya menjadi struktur pohon objek dinamis yang disebut DOM (Document Object Model).",
+                    "3. Proses Rendering Lengkap:\nBrowser menggabungkan DOM Tree dengan CSS (penataan gaya) dan JavaScript (fungsionalitas) untuk merender halaman web visual di layar Anda."
+                ],
+                quiz: {
+                    question: "Struktur pohon objek dinamis yang dibuat browser dari kode HTML disebut...",
+                    options: [
+                        "A. DOM (Document Object Model)",
+                        "B. API (Application Programming Interface)",
+                        "C. HTTP (Hypertext Transfer Protocol)",
+                        "D. CSS (Cascading Style Sheets)"
+                    ],
+                    answer: 0
+                }
+            },
+            3: {
+                title: "Tag-Tag Utama HTML",
+                cards: [
+                    "1. Struktur Dokumen Dasar:\n• <!DOCTYPE html>: Deklarasi versi HTML5.\n• <html>: Elemen induk pembungkus.\n• <head>: Menyimpan metadata, judul tab, & CSS.\n• <body>: Area tempat seluruh konten visual web ditampilkan.",
+                    "2. Tag Teks, Judul & Tautan:\n• <h1> hingga <h6>: Tingkatan hirarki judul.\n• <p>: Paragraf teks.\n• <a href=\"...\">: Hyperlink untuk berpindah ke halaman lain.",
+                    "3. Tag Media & List Konten:\n• <img src=\"...\" alt=\"...\">: Menyisipkan gambar.\n• <ul> & <ol>: Daftar poin/angka yang diisi dengan tag elemen <li>."
+                ],
+                quiz: {
+                    question: "Tag HTML yang digunakan untuk membuat tautan/hyperlink adalah...",
+                    options: [
+                        "A. <link>",
+                        "B. <href>",
+                        "C. <a>",
+                        "D. <url>"
+                    ],
+                    answer: 2
+                }
+            },
+            4: {
+                title: "Atribut Dalam HTML",
+                cards: [
+                    "1. Pengertian Atribut:\nAtribut memberikan informasi tambahan pada tag pembuka HTML dengan sintaksis: nama_atribut=\"nilai_atribut\". Contoh: <a href=\"https://google.com\">.",
+                    "2. Atribut Global (Id & Class):\n• 'id': Identitas unik tunggal untuk satu elemen khusus.\n• 'class': Pengelompokan banyak elemen sekaligus untuk penataan CSS/JS.",
+                    "3. Atribut Khusus & Boolean:\n• 'src' & 'alt' pada tag <img> (sumber & teks alternatif).\n• Atribut Boolean seperti 'required', 'disabled', dan 'checked' pada form input."
+                ],
+                quiz: {
+                    question: "Atribut mana yang memberikan identitas unik khusus hanya untuk SATU elemen HTML?",
+                    options: [
+                        "A. class",
+                        "B. style",
+                        "C. id",
+                        "D. type"
+                    ],
+                    answer: 2
+                }
+            }
+        };
+
+        const MOTIVATION_QUOTES = [
+            "\"Setiap developer hebat berawal dari pemula yang tidak pernah berhenti belajar!\"",
+            "\"Koding bukan tentang menghafal baris kode, tapi tentang memecahkan masalah!\"",
+            "\"Kegagalan dan error adalah petunjuk terbaik menuju pemahaman kode yang lebih dalam.\"",
+            "\"Selamat! Kamu selangkah lebih dekat menjadi Web Developer yang handal! Tetap tingkatkan kemampuanmu!\""
+        ];
+
+        /* --- AUDIO SYNTHESIZER (8-BIT SOUNDS) --- */
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
+            }
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+            playTone(freq, type, duration) {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch (e) {}
+            }
+            jump() { this.playTone(350, 'square', 0.15); }
+            coin() { this.playTone(800, 'sine', 0.2); }
+            hit() { this.playTone(150, 'sawtooth', 0.3); }
+            win() {
+                if (!this.ctx) return;
+                [300, 400, 500, 600].forEach((f, i) => {
+                    setTimeout(() => this.playTone(f, 'triangle', 0.15), i * 120);
+                });
+            }
+        }
+        const audio = new SoundFX();
+
+        /* --- GAME ENGINE & STATE VARIABLES --- */
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let currentLevel = 1;
+        let unlockedLevel = 1;
+        let score = 0;
+        let coins = 0;
+        let lives = 3;
+        let isPaused = false;
+        let gameLoopId = null;
+        let alertTimeout = null;
+
+        let totalQuestionsInLevel = 0;
+        let collectedQuestionsInLevel = 0;
+
+        let platforms = [];
+        let enemies = [];
+        let coinItems = [];
+        let pipes = [];
+        let clouds = [];
+        let birds = [];
+        let flag = { x: 1000, y: 300 };
+
+        // Input Controls
+        const keys = { right: false, left: false, up: false };
+
+        /* --- HIGH PERFORMANCE MOBILE TOUCH INPUT TRACKING --- */
+        function setupTouchControls() {
+            const btnLeft = document.getElementById('btn-left');
+            const btnRight = document.getElementById('btn-right');
+            const btnJump = document.getElementById('btn-jump');
+
+            const handleTouch = (e) => {
+                e.preventDefault();
+                audio.init();
+
+                let leftPressed = false;
+                let rightPressed = false;
+                let jumpPressed = false;
+
+                const rectLeft = btnLeft.getBoundingClientRect();
+                const rectRight = btnRight.getBoundingClientRect();
+                const rectJump = btnJump.getBoundingClientRect();
+
+                for (let i = 0; i < e.touches.length; i++) {
+                    const touch = e.touches[i];
+                    const tx = touch.clientX;
+                    const ty = touch.clientY;
+
+                    if (tx >= rectLeft.left && tx <= rectLeft.right && ty >= rectLeft.top && ty <= rectLeft.bottom) {
+                        leftPressed = true;
+                    }
+                    if (tx >= rectRight.left && tx <= rectRight.right && ty >= rectRight.top && ty <= rectRight.bottom) {
+                        rightPressed = true;
+                    }
+                    if (tx >= rectJump.left && tx <= rectJump.right && ty >= rectJump.top && ty <= rectJump.bottom) {
+                        jumpPressed = true;
+                    }
+                }
+
+                keys.left = leftPressed;
+                keys.right = rightPressed;
+                keys.up = jumpPressed;
+            };
+
+            const options = { passive: false };
+            ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach(eventType => {
+                window.addEventListener(eventType, (e) => {
+                    if (e.target.closest('footer')) {
+                        handleTouch(e);
+                    }
+                }, options);
+            });
+
+            // Mouse fallback for controls testing
+            const bindMouse = (btn, key) => {
+                btn.addEventListener('mousedown', (e) => { e.preventDefault(); audio.init(); keys[key] = true; });
+                btn.addEventListener('mouseup', (e) => { e.preventDefault(); keys[key] = false; });
+                btn.addEventListener('mouseleave', (e) => { keys[key] = false; });
+            };
+            bindMouse(btnLeft, 'left');
+            bindMouse(btnRight, 'right');
+            bindMouse(btnJump, 'up');
+        }
+
+        /* --- CLASSES GAME ENTITIES --- */
+        class Player {
+            constructor() {
+                this.x = 50;
+                this.y = 300;
+                this.width = 28;
+                this.height = 36;
+                this.vx = 0;
+                this.vy = 0;
+                this.speed = 4;
+                this.jumpPower = -11;
+                this.grounded = false;
+                this.facing = 'right';
+            }
+
+            update(platforms) {
+                if (keys.right) {
+                    this.vx = this.speed;
+                    this.facing = 'right';
+                } else if (keys.left) {
+                    this.vx = -this.speed;
+                    this.facing = 'left';
+                } else {
+                    this.vx = 0;
+                }
+
+                if (keys.up && this.grounded) {
+                    this.vy = this.jumpPower;
+                    this.grounded = false;
+                    audio.jump();
+                }
+
+                // Gravitasi
+                this.vy += 0.55;
+
+                // Gerakan X
+                this.x += this.vx;
+                if (this.x < 0) this.x = 0;
+
+                // Tabrakan Horizontal dengan Platform
+                platforms.forEach(p => {
+                    if (this.collidesWith(p)) {
+                        if (this.vx > 0) this.x = p.x - this.width;
+                        else if (this.vx < 0) this.x = p.x + p.width;
+                    }
+                });
+
+                // Gerakan Y
+                this.y += this.vy;
+                this.grounded = false;
+
+                // Tabrakan Vertikal dengan Platform
+                platforms.forEach(p => {
+                    if (this.collidesWith(p)) {
+                        if (this.vy > 0 && this.y + this.height - this.vy <= p.y + 12) {
+                            this.y = p.y - this.height;
+                            this.vy = 0;
+                            this.grounded = true;
+                        } else if (this.vy < 0) {
+                            this.y = p.y + p.height;
+                            this.vy = 0;
+                            if (p.isQuestion) {
+                                triggerQuestionBlock(p);
+                            }
+                        }
+                    }
+                });
+
+                // Jatuh ke jurang
+                if (this.y > canvas.height + 50) {
+                    resetPlayer();
+                }
+            }
+
+            collidesWith(obj) {
+                return this.x < obj.x + obj.width &&
+                       this.x + this.width > obj.x &&
+                       this.y < obj.y + obj.height &&
+                       this.y + this.height > obj.y;
+            }
+
+            draw() {
+                // Mario Red Body
+                ctx.fillStyle = '#ef4444';
+                ctx.fillRect(this.x, this.y + 10, this.width, 16);
+
+                // Blue Overall
+                ctx.fillStyle = '#2563eb';
+                ctx.fillRect(this.x + 4, this.y + 20, this.width - 8, 12);
+
+                // Face / Head
+                ctx.fillStyle = '#fde047';
+                ctx.fillRect(this.x + 4, this.y, 20, 12);
+
+                // Hat
+                ctx.fillStyle = '#dc2626';
+                ctx.fillRect(this.x + 2, this.y - 2, 24, 6);
+
+                // Eye
+                ctx.fillStyle = '#000000';
+                const eyeX = this.facing === 'right' ? this.x + 18 : this.x + 6;
+                ctx.fillRect(eyeX, this.y + 4, 4, 4);
+            }
+        }
+
+        class Block {
+            constructor(x, y, width, height, isQuestion = false, cardIndex = 0) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.isQuestion = isQuestion;
+                this.cardIndex = cardIndex;
+                this.hit = false;
+            }
+
+            draw() {
+                if (this.isQuestion) {
+                    if (this.hit) {
+                        ctx.fillStyle = '#831843';
+                        ctx.fillRect(this.x, this.y, this.width, this.height);
+                        ctx.strokeStyle = '#500724';
+                        ctx.strokeRect(this.x, this.y, this.width, this.height);
+                    } else {
+                        // PINK QUESTION BLOCK
+                        ctx.fillStyle = '#ec4899';
+                        ctx.fillRect(this.x, this.y, this.width, this.height);
+                        ctx.strokeStyle = '#f472b6';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(this.x, this.y, this.width, this.height);
+
+                        ctx.fillStyle = '#ffffff';
+                        ctx.font = 'bold 16px "Press Start 2P"';
+                        ctx.fillText('?', this.x + 8, this.y + 22);
+                    }
+                } else {
+                    // Normal Brick
+                    ctx.fillStyle = '#b45309';
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                    ctx.strokeStyle = '#78350f';
+                    ctx.strokeRect(this.x, this.y, this.width, this.height);
+                }
+            }
+        }
+
+        class Coin {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 16;
+                this.height = 16;
+                this.collected = false;
+            }
+
+            draw() {
+                if (this.collected) return;
+                ctx.fillStyle = '#facc15';
+                ctx.beginPath();
+                ctx.arc(this.x + 8, this.y + 8, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#ca8a04';
+                ctx.stroke();
+            }
+        }
+
+        class Enemy {
+            constructor(x, y, range = 80) {
+                this.x = x;
+                this.y = y;
+                this.startX = x;
+                this.width = 28;
+                this.height = 24;
+                this.vx = 1.2;
+                this.range = range;
+                this.alive = true;
+            }
+
+            update() {
+                if (!this.alive) return;
+                this.x += this.vx;
+                if (Math.abs(this.x - this.startX) > this.range) {
+                    this.vx *= -1;
+                }
+            }
+
+            draw() {
+                if (!this.alive) return;
+                // Bug HTML / Goomba
+                ctx.fillStyle = '#dc2626';
+                ctx.fillRect(this.x, this.y + 6, this.width, this.height - 6);
+
+                ctx.fillStyle = '#991b1b';
+                ctx.fillRect(this.x + 4, this.y, this.width - 8, 8);
+
+                // Bug Antennae
+                ctx.strokeStyle = '#000000';
+                ctx.beginPath();
+                ctx.moveTo(this.x + 6, this.y);
+                ctx.lineTo(this.x + 2, this.y - 4);
+                ctx.moveTo(this.x + 22, this.y);
+                ctx.lineTo(this.x + 26, this.y - 4);
+                ctx.stroke();
+            }
+        }
+
+        class Pipe {
+            constructor(x, y, height) {
+                this.x = x;
+                this.y = y;
+                this.width = 44;
+                this.height = height;
+            }
+
+            draw() {
+                // DARK BLUE PIPE (BIRU TUA)
+                ctx.fillStyle = '#1e3a8a';
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.fillStyle = '#2563eb';
+                ctx.fillRect(this.x - 4, this.y, this.width + 8, 16);
+                ctx.strokeStyle = '#1e40af';
+                ctx.strokeRect(this.x - 4, this.y, this.width + 8, 16);
+            }
+        }
+
+        class Bird {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = 0.8 + Math.random() * 0.6;
+                this.wingState = 0;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.wingState += 0.1;
+                if (this.x > 2000) this.x = -100;
+            }
+
+            draw() {
+                ctx.fillStyle = '#0f172a';
+                // Animasi Sayap Burung Pixel
+                const wingY = Math.sin(this.wingState) * 4;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x - 8, this.y - 6 + wingY);
+                ctx.lineTo(this.x - 4, this.y);
+                ctx.lineTo(this.x - 8, this.y + 6 - wingY);
+                ctx.fill();
+            }
+        }
+
+        const player = new Player();
+
+        /* --- EVENT LISTENERS & KONTROL --- */
+        window.addEventListener('keydown', e => {
+            audio.init();
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') keys.up = true;
+        });
+
+        window.addEventListener('keyup', e => {
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') keys.up = false;
+        });
+
+        // Touch Control Binding
+        const bindTouch = (id, key) => {
+            const btn = document.getElementById(id);
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); audio.init(); keys[key] = true; });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+            btn.addEventListener('mousedown', () => { audio.init(); keys[key] = true; });
+            btn.addEventListener('mouseup', () => { keys[key] = false; });
+        };
+        bindTouch('btn-left', 'left');
+        // Initialize touch controls on load
+        setupTouchControls();
+
+        /* --- LOGIKA GAMEPLAY & AKSI --- */
+        function triggerQuestionBlock(block) {
+            if (block.hit) return;
+            block.hit = true;
+            collectedQuestionsInLevel++;
+            score += 100;
+            coins += 1;
+            updateUI();
+            audio.coin();
+
+            // Tampilkan Modal Edukasi
+            const levelInfo = LEVEL_DATA[currentLevel];
+            const cardText = levelInfo.cards[block.cardIndex] || "HTML adalah fondasi dari web development.";
+            document.getElementById('card-title').innerText = `LEVEL ${currentLevel}: ${levelInfo.title.toUpperCase()}`;
+            document.getElementById('card-body').innerText = cardText;
+            document.getElementById('flashcard-modal').classList.remove('hidden');
+            isPaused = true;
+        }
+
+        function closeFlashcard() {
+            document.getElementById('flashcard-modal').classList.add('hidden');
+            isPaused = false;
+        }
+
+        function triggerLevelQuiz() {
+            isPaused = true;
+            const quizData = LEVEL_DATA[currentLevel].quiz;
+            document.getElementById('quiz-question').innerText = quizData.question;
+            const optionsContainer = document.getElementById('quiz-options');
+            const feedbackElem = document.getElementById('quiz-feedback');
+            feedbackElem.innerText = "";
+
+            optionsContainer.innerHTML = "";
+            quizData.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-3 rounded-lg bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 text-white text-sm sm:text-base transition";
+                btn.innerText = opt;
+                btn.onclick = () => checkQuizAnswer(idx, quizData.answer);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('quiz-modal').classList.remove('hidden');
+        }
+
+        function checkQuizAnswer(selectedIdx, correctIdx) {
+            const feedbackElem = document.getElementById('quiz-feedback');
+            if (selectedIdx === correctIdx) {
+                feedbackElem.className = "text-sm sm:text-base font-bold text-emerald-400 mb-2";
+                feedbackElem.innerText = "✅ JAWABAN BENAR! MEMBUKA FINISH...";
+                audio.win();
+
+                setTimeout(() => {
+                    document.getElementById('quiz-modal').classList.add('hidden');
+                    if (currentLevel >= unlockedLevel && unlockedLevel < 4) {
+                        unlockedLevel = currentLevel + 1;
+                    }
+                    showEndScreen(true);
+                }, 1200);
+            } else {
+                feedbackElem.className = "text-sm sm:text-base font-bold text-red-400 mb-2";
+                feedbackElem.innerText = "❌ JAWABAN SALAH! Coba baca kembali materi dan jawab ulang!";
+                audio.hit();
+            }
+        }
+
+        function showMissionAlert(msg) {
+            const alertBox = document.getElementById('mission-alert');
+            alertBox.innerText = msg;
+            alertBox.classList.remove('opacity-0');
+            if (alertTimeout) clearTimeout(alertTimeout);
+            alertTimeout = setTimeout(() => {
+                alertBox.classList.add('opacity-0');
+            }, 2500);
+        }
+
+        function updateUI() {
+            document.getElementById('score-val').innerText = score.toString().padStart(6, '0');
+            document.getElementById('coins-val').innerText = coins.toString().padStart(2, '0');
+            document.getElementById('lives-val').innerText = '❤️'.repeat(Math.max(0, lives));
+            document.getElementById('mission-val').innerText = `${collectedQuestionsInLevel}/${totalQuestionsInLevel}`;
+            
+            const missionElem = document.getElementById('mission-val');
+            if (collectedQuestionsInLevel >= totalQuestionsInLevel && totalQuestionsInLevel > 0) {
+                missionElem.className = "pixel-font text-[10px] sm:text-xs text-emerald-400 animate-pulse";
+            } else {
+                missionElem.className = "pixel-font text-[10px] sm:text-xs text-cyan-300";
+            }
+        }
+
+        function resetPlayer() {
+            lives--;
+            audio.hit();
+            updateUI();
+            if (lives <= 0) {
+                showEndScreen(false);
+            } else {
+                player.x = 50;
+                player.y = 300;
+                player.vx = 0;
+                player.vy = 0;
+            }
+        }
+
+        function drawCloud(x, y, scale) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.beginPath();
+            ctx.arc(x, y, 15 * scale, 0, Math.PI * 2);
+            ctx.arc(x + 12 * scale, y - 8 * scale, 12 * scale, 0, Math.PI * 2);
+            ctx.arc(x + 24 * scale, y, 15 * scale, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function loadLevel(lvl) {
+            platforms = [];
+            enemies = [];
+            coinItems = [];
+            pipes = [];
+            clouds = [];
+            birds = [];
+            collectedQuestionsInLevel = 0;
+            totalQuestionsInLevel = 0;
+
+            player.x = 50;
+            player.y = 300;
+            player.vx = 0;
+            player.vy = 0;
+
+            // Background clouds & birds
+            for (let i = 0; i < 10; i++) {
+                clouds.push({ x: i * 250 + Math.random() * 80, y: 40 + Math.random() * 60, scale: 0.8 + Math.random() * 0.5 });
+            }
+            for (let i = 0; i < 4; i++) {
+                birds.push(new Bird(i * 400 + 100, 30 + Math.random() * 50));
+            }
+
+            // Main Ground
+            platforms.push(new Block(0, 400, 1800, 50));
+
+            if (lvl === 1) { // Level 1: Sejarah Perkembangan HTML
+                platforms.push(new Block(220, 280, 32, 32, true, 0));
+                platforms.push(new Block(252, 280, 32, 32));
+                platforms.push(new Block(284, 280, 32, 32, true, 1));
+
+                coinItems.push(new Coin(228, 240));
+                coinItems.push(new Coin(288, 240));
+
+                pipes.push(new Pipe(420, 330, 70));
+
+                platforms.push(new Block(520, 240, 32, 32, true, 2));
+                platforms.push(new Block(552, 240, 96, 32));
+
+                enemies.push(new Enemy(680, 375, 70));
+
+                flag = { x: 1050, y: 300 };
+            } 
+            else if (lvl === 2) { // Level 2: Cara Kerja HTML
+                platforms.push(new Block(180, 290, 32, 32, true, 0));
+                pipes.push(new Pipe(300, 320, 80));
+
+                platforms.push(new Block(380, 220, 32, 32, true, 1));
+                platforms.push(new Block(412, 220, 32, 32));
+
+                coinItems.push(new Coin(388, 180));
+                coinItems.push(new Coin(420, 180));
+
+                enemies.push(new Enemy(230, 375, 60));
+                enemies.push(new Enemy(500, 375, 80));
+
+                platforms.push(new Block(620, 250, 32, 32, true, 2));
+                pipes.push(new Pipe(750, 310, 90));
+
+                flag = { x: 1150, y: 300 };
+            }
+            else if (lvl === 3) { // Level 3: Tag-Tag Utama HTML
+                platforms.push(new Block(160, 280, 32, 32, true, 0));
+                pipes.push(new Pipe(280, 330, 70));
+
+                platforms.push(new Block(360, 210, 32, 32, true, 1));
+                platforms.push(new Block(392, 210, 64, 32));
+
+                coinItems.push(new Coin(368, 170));
+                coinItems.push(new Coin(408, 170));
+
+                enemies.push(new Enemy(200, 375, 70));
+                enemies.push(new Enemy(480, 375, 90));
+
+                platforms.push(new Block(580, 260, 32, 32, true, 2));
+                pipes.push(new Pipe(720, 300, 100));
+
+                enemies.push(new Enemy(790, 375, 60));
+
+                flag = { x: 1250, y: 300 };
+            }
+            else { // Level 4: Atribut Dalam HTML
+                platforms.push(new Block(180, 280, 32, 32, true, 0));
+                pipes.push(new Pipe(280, 320, 80));
+
+                platforms.push(new Block(380, 210, 32, 32, true, 1));
+                platforms.push(new Block(412, 210, 32, 32));
+                platforms.push(new Block(444, 210, 32, 32, true, 2));
+
+                coinItems.push(new Coin(388, 170));
+                coinItems.push(new Coin(452, 170));
+
+                enemies.push(new Enemy(220, 375, 80));
+                enemies.push(new Enemy(520, 375, 100));
+
+                pipes.push(new Pipe(680, 290, 110));
+                enemies.push(new Enemy(740, 375, 70));
+
+                flag = { x: 1350, y: 300 };
+            }
+
+            // Hitung total blok pertanyaan untuk misi
+            platforms.forEach(p => {
+                if (p.isQuestion) totalQuestionsInLevel++;
+            });
+
+            // Gabungkan Pipa ke Platform
+            pipes.forEach(p => platforms.push(new Block(p.x, p.y, p.width, p.height)));
+
+            document.getElementById('level-val').innerText = lvl;
+            updateUI();
+        }
+
+        function update() {
+            if (isPaused) return;
+
+            player.update(platforms);
+            birds.forEach(b => b.update());
+
+            // Koin
+            coinItems.forEach(coin => {
+                if (!coin.collected && player.collidesWith(coin)) {
+                    coin.collected = true;
+                    coins += 1;
+                    score += 50;
+                    audio.coin();
+                    updateUI();
+                }
+            });
+
+            // Musuh
+            enemies.forEach(enemy => {
+                if (!enemy.alive) return;
+                enemy.update();
+
+                if (player.collidesWith(enemy)) {
+                    if (player.vy > 0 && player.y + player.height - player.vy <= enemy.y + 10) {
+                        enemy.alive = false;
+                        player.vy = -8;
+                        score += 200;
+                        updateUI();
+                        audio.coin();
+                    } else {
+                        resetPlayer();
+                    }
+                }
+            });
+
+            // Penjagaan Tiang Finish
+            if (player.x + player.width >= flag.x) {
+                if (collectedQuestionsInLevel >= totalQuestionsInLevel) {
+                    triggerLevelQuiz();
+                } else {
+                    player.x = flag.x - player.width - 5;
+                    const remaining = totalQuestionsInLevel - collectedQuestionsInLevel;
+                    showMissionAlert(`🔒 Misi Belum Selesai! Buka ${remaining} blok [?] lagi untuk membuka pintu finish.`);
+                    audio.hit();
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            let cameraX = Math.max(0, player.x - 200);
+
+            ctx.save();
+            ctx.translate(-cameraX, 0);
+
+            // Sky Background
+            const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            skyGradient.addColorStop(0, '#38bdf8');
+            skyGradient.addColorStop(1, '#bae6fd');
+            ctx.fillStyle = skyGradient;
+            ctx.fillRect(cameraX, 0, canvas.width, canvas.height);
+
+            // Clouds & Birds
+            clouds.forEach(c => drawCloud(c.x, c.y, c.scale));
+            birds.forEach(b => b.draw());
+
+            // Platforms & Pipes
+            platforms.forEach(p => p.draw());
+            pipes.forEach(p => p.draw());
+
+            // Coins
+            coinItems.forEach(c => c.draw());
+
+            // Enemies
+            enemies.forEach(e => e.draw());
+
+            // Render Flagpole
+            const isMissionComplete = collectedQuestionsInLevel >= totalQuestionsInLevel;
+
+            ctx.fillStyle = '#64748b';
+            ctx.fillRect(flag.x, flag.y - 120, 8, 120);
+
+            if (isMissionComplete) {
+                ctx.fillStyle = '#22c55e';
+                ctx.beginPath();
+                ctx.moveTo(flag.x + 8, flag.y - 120);
+                ctx.lineTo(flag.x + 48, flag.y - 100);
+                ctx.lineTo(flag.x + 8, flag.y - 80);
+                ctx.fill();
+            } else {
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.moveTo(flag.x + 8, flag.y - 120);
+                ctx.lineTo(flag.x + 48, flag.y - 100);
+                ctx.lineTo(flag.x + 8, flag.y - 80);
+                ctx.fill();
+
+                ctx.fillStyle = '#facc15';
+                ctx.fillRect(flag.x - 6, flag.y - 60, 20, 16);
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(flag.x + 1, flag.y - 54, 6, 4);
+            }
+
+            // Pemain Mario
+            player.draw();
+
+            ctx.restore();
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+
+        /* --- TAMPILAN MANAJEMEN SCREEN --- */
+        function startGame(lvl) {
+            if (lvl > unlockedLevel) {
+                showMissionAlert(`🔒 Level ${lvl} masih terkunci! Selesaikan Level ${lvl - 1} terlebih dahulu.`);
+                return;
+            }
+
+            audio.init();
+            currentLevel = lvl;
+            lives = 3;
+            score = 0;
+            coins = 0;
+            
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('level-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('quiz-modal').classList.add('hidden');
+            
+            loadLevel(currentLevel);
+            isPaused = false;
+            
+            if (!gameLoopId) {
+                gameLoop();
+            }
+        }
+
+        function showLevelSelect() {
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`lvl-btn-${i}`);
+                if (i <= unlockedLevel) {
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    btn.querySelector('.pixel-font').innerText = `LEVEL ${i}`;
+                } else {
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    btn.querySelector('.pixel-font').innerText = `LEVEL ${i} 🔒`;
+                }
+            }
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('level-screen').classList.remove('hidden');
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('quiz-modal').classList.add('hidden');
+            isPaused = true;
+        }
+
+        function showStartScreen() {
+            document.getElementById('start-screen').classList.remove('hidden');
+            document.getElementById('level-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('quiz-modal').classList.add('hidden');
+            isPaused = true;
+        }
+
+        function showEndScreen(win) {
+            isPaused = true;
+            const endScreen = document.getElementById('end-screen');
+            const endTitle = document.getElementById('end-title');
+            const endSub = document.getElementById('end-subtitle');
+            const quoteElem = document.getElementById('quote-msg');
+            const nextBtn = document.getElementById('next-lvl-btn');
+
+            document.getElementById('final-score').innerText = score.toString().padStart(6, '0');
+            document.getElementById('final-coins').innerText = coins.toString().padStart(2, '0');
+
+            // Set kata-kata motivasi acak
+            const randomQuote = MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)];
+            quoteElem.innerText = randomQuote;
+
+            if (win) {
+                endTitle.innerText = "LEVEL SELESAI!";
+                endTitle.className = "pixel-font text-xl sm:text-4xl mb-3 text-emerald-400";
+                endSub.innerText = `Hebat! Kamu berhasil menguasai materi ${LEVEL_DATA[currentLevel].title}!`;
+                if (currentLevel < 4) {
+                    nextBtn.classList.remove('hidden');
+                } else {
+                    nextBtn.classList.add('hidden');
+                    endSub.innerText = "🎉 SELAMAT! Kamu telah menyelesaikan seluruh level pembelajaran HTML!";
+                }
+            } else {
+                endTitle.innerText = "GAME OVER!";
+                endTitle.className = "pixel-font text-xl sm:text-4xl mb-3 text-red-500";
+                endSub.innerText = "Jangan menyerah, coba lagi untuk mempelajari materi HTML!";
+                nextBtn.classList.add('hidden');
+            }
+
+            endScreen.classList.remove('hidden');
+        }
+
+        function nextLevel() {
+            if (currentLevel < 4) {
+                startGame(currentLevel + 1);
+            }
+        }
+    </script>
+</body>
+</html>
